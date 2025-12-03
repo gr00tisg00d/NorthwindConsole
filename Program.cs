@@ -17,6 +17,8 @@ do
   Console.WriteLine("2) Add category");
   Console.WriteLine("3) Display Category and related products");
   Console.WriteLine("4) Display all Categories and their related products");
+  Console.WriteLine("5) Create product");
+  Console.WriteLine("6) Edit product");
   Console.WriteLine("Enter to quit");
   string? choice = Console.ReadLine();
   Console.Clear();
@@ -50,14 +52,13 @@ do
     category.CategoryName = Console.ReadLine()!;
     Console.WriteLine("Enter the Category Description:");
     category.Description = Console.ReadLine();
-    ValidationContext context = new ValidationContext(category, null, null);
-    List<ValidationResult> results = new List<ValidationResult>();
+    ValidationContext context = new ValidationContext(category, null, null); // Creates a context for validating the category object.
+    List<ValidationResult> results = new List<ValidationResult>(); // results is a list that will hold any validation errors.
 
-    var isValid = Validator.TryValidateObject(category, context, results, true);
+    var isValid = Validator.TryValidateObject(category, context, results, true); // Checks the category object against its validation attributes. (like [Required])
     if (isValid)
     {
       var db = new DataContext();
-      // check for unique name
       if (db.Categories.Any(c => c.CategoryName == category.CategoryName))
       {
         // generate validation error
@@ -67,7 +68,10 @@ do
       else
       {
         logger.Info("Validation passed");
-        // TODO: save category to db
+        db.Categories.Add(category);
+        db.SaveChanges();
+        logger.Info("Category added: {CategoryName}", category.CategoryName);
+
       }
     }
     if (!isValid)
@@ -111,6 +115,47 @@ do
       {
         Console.WriteLine($"\t{p.ProductName}");
       }
+    }
+  }
+  else if (choice == "5")
+  {
+    Product product = new();
+    Console.WriteLine("Product Name: ");
+    product.ProductName = Console.ReadLine();
+
+    Console.WriteLine("Please edit the product information in the 'Product Editor' menu.");
+
+    var db = new DataContext();
+
+    db.Products.Add(product);
+    db.SaveChanges();
+
+    Console.WriteLine("SupplierId: ");
+    product.SupplierId = int.Parse(Console.ReadLine());
+    Console.WriteLine("CategoryId: ");
+    product.CategoryId = int.Parse(Console.ReadLine());
+    Console.WriteLine("QuantityPerUnity: ");
+    product.QuantityPerUnit = Console.ReadLine();
+    Console.WriteLine("UnitPrice: ");
+    product.UnitPrice = decimal.Parse(Console.ReadLine());
+    Console.WriteLine("UnitsInStock: ");
+    product.UnitsInStock = short.Parse(Console.ReadLine());
+    Console.WriteLine("UnitsOnOrder: ");
+    product.UnitsOnOrder = short.Parse(Console.ReadLine());
+    Console.WriteLine("ReorderLevel: ");
+    product.ReorderLevel = short.Parse(Console.ReadLine());
+    Console.WriteLine("Discontinued: ");
+    product.Discontinued = bool.Parse(Console.ReadLine());
+  }
+  else if (choice == "6")
+  {
+    var db = new DataContext();
+    Console.WriteLine("Please Select a Product:");
+    int i = 1;
+    foreach (Product product in db.Products)
+    {
+      Console.WriteLine($"{i}.) {product.ProductName}");
+      i++;
     }
   }
   else if (String.IsNullOrEmpty(choice))
