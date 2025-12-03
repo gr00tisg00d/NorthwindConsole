@@ -61,7 +61,7 @@ do
       var db = new DataContext();
       if (db.Categories.Any(c => c.CategoryName == category.CategoryName))
       {
-        // generate validation error
+        // validation error
         isValid = false;
         results.Add(new ValidationResult("Name exists", ["CategoryName"]));
       }
@@ -119,44 +119,65 @@ do
   }
   else if (choice == "5")
   {
-    Product product = new();
-    Console.WriteLine("Product Name: ");
-    product.ProductName = Console.ReadLine();
-
-    Console.WriteLine("Please edit the product information in the 'Product Editor' menu.");
-
     var db = new DataContext();
+
+    Product product = new();
+    product.ProductName = GetValidInput<string>("Product Name");
+
+    // Display available suppliers
+    Console.WriteLine("\nAvailable Suppliers:");
+    foreach (var s in db.Suppliers.OrderBy(s => s.SupplierId))
+    {
+      Console.WriteLine($"{s.SupplierId}) {s.CompanyName}");
+    }
+    product.SupplierId = GetValidInput<int>("SupplierId");
+
+    // Display available categories
+    Console.WriteLine("\nAvailable Categories:");
+    foreach (var c in db.Categories.OrderBy(c => c.CategoryId))
+    {
+      Console.WriteLine($"{c.CategoryId}) {c.CategoryName}");
+    }
+    product.CategoryId = GetValidInput<int>("CategoryId");
+
+    product.QuantityPerUnit = GetValidInput<string>("QuantityPerUnit");
+    product.UnitPrice = GetValidInput<decimal>("UnitPrice");
+    product.UnitsInStock = GetValidInput<short>("UnitsInStock");
+    product.UnitsOnOrder = GetValidInput<short>("UnitsOnOrder");
+    product.ReorderLevel = GetValidInput<short>("ReorderLevel");
+    product.Discontinued = GetValidInput<bool>("Discontinued (true/false)");
 
     db.Products.Add(product);
     db.SaveChanges();
-
-    Console.WriteLine("SupplierId: ");
-    product.SupplierId = int.Parse(Console.ReadLine());
-    Console.WriteLine("CategoryId: ");
-    product.CategoryId = int.Parse(Console.ReadLine());
-    Console.WriteLine("QuantityPerUnity: ");
-    product.QuantityPerUnit = Console.ReadLine();
-    Console.WriteLine("UnitPrice: ");
-    product.UnitPrice = decimal.Parse(Console.ReadLine());
-    Console.WriteLine("UnitsInStock: ");
-    product.UnitsInStock = short.Parse(Console.ReadLine());
-    Console.WriteLine("UnitsOnOrder: ");
-    product.UnitsOnOrder = short.Parse(Console.ReadLine());
-    Console.WriteLine("ReorderLevel: ");
-    product.ReorderLevel = short.Parse(Console.ReadLine());
-    Console.WriteLine("Discontinued: ");
-    product.Discontinued = bool.Parse(Console.ReadLine());
+    logger.Info("Product added: {ProductName}", product.ProductName);
   }
   else if (choice == "6")
   {
     var db = new DataContext();
+    var products = db.Products.ToList();
+
     Console.WriteLine("Please Select a Product:");
-    int i = 1;
-    foreach (Product product in db.Products)
+    for (int i = 0; i < products.Count; i++)
     {
-      Console.WriteLine($"{i}.) {product.ProductName}");
-      i++;
+      Console.WriteLine($"{i + 1}.) {products[i].ProductName}");
     }
+
+    int selection = int.Parse(Console.ReadLine()!) - 1;
+    Product productToEdit = products[selection];
+
+    Console.WriteLine($"\nEditing: {productToEdit.ProductName}");
+    Console.WriteLine("Press Enter to keep current value\n");
+
+    Console.WriteLine($"Product Name [{productToEdit.ProductName}]: ");
+    string input = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(input)) productToEdit.ProductName = input;
+
+    Console.WriteLine($"UnitPrice [{productToEdit.UnitPrice}]: ");
+    input = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(input)) productToEdit.UnitPrice = decimal.Parse(input);
+
+    db.SaveChanges();
+    logger.Info("Product updated: {ProductName}", productToEdit.ProductName);
   }
   else if (String.IsNullOrEmpty(choice))
   {
@@ -166,3 +187,28 @@ do
 } while (true);
 
 logger.Info("Program ended");
+
+static T GetValidInput<T>(string prompt, string currentValue = null)
+{
+  while (true)
+  {
+    if (currentValue != null)
+      Console.WriteLine($"{prompt} [{currentValue}]: ");
+    else
+      Console.WriteLine($"{prompt}: ");
+
+    string input = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(input) && currentValue != null)
+      return default(T);
+
+    try
+    {
+      return (T)Convert.ChangeType(input, typeof(T));
+    }
+    catch
+    {
+      Console.WriteLine("Wrong entry type. Please try again.");
+    }
+  }
+}
