@@ -19,6 +19,7 @@ do
   Console.WriteLine("4) Display all Categories and their related products");
   Console.WriteLine("5) Create product");
   Console.WriteLine("6) Edit product");
+  Console.WriteLine("7) Display products");
   Console.WriteLine("Enter to quit");
   string? choice = Console.ReadLine();
   Console.Clear();
@@ -178,6 +179,49 @@ do
 
     db.SaveChanges();
     logger.Info("Product updated: {ProductName}", productToEdit.ProductName);
+  }
+  else if (choice == "7")
+  {
+    var db = new DataContext();
+
+    Console.WriteLine("Select product display option:");
+    Console.WriteLine("1) All products");
+    Console.WriteLine("2) Active products only");
+    Console.WriteLine("3) Discontinued products only");
+    string productChoice = Console.ReadLine();
+
+    IQueryable<Product> query = db.Products;
+
+    if (productChoice == "2")
+    {
+      query = query.Where(p => !p.Discontinued);
+      Console.WriteLine("\n--- Active Products ---");
+    }
+    else if (productChoice == "3")
+    {
+      query = query.Where(p => p.Discontinued);
+      Console.WriteLine("\n--- Discontinued Products ---");
+    }
+    else
+    {
+      Console.WriteLine("\n--- All Products ---");
+    }
+
+    query = query.OrderBy(p => p.ProductName);
+
+    Console.WriteLine($"{query.Count()} records returned\n");
+
+    foreach (var product in query)
+    {
+      if (product.Discontinued)
+      {
+        Console.WriteLine($"{product.ProductName} (DISCONTINUED)");
+      }
+      else
+      {
+        Console.WriteLine($"{product.ProductName}");
+      }
+    }
   }
   else if (String.IsNullOrEmpty(choice))
   {
