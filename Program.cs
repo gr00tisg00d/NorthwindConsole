@@ -28,6 +28,7 @@ do
 
   if (choice == "1")
   {
+    logger.Info("Displaying all categories");
     // display categories
     var configuration = new ConfigurationBuilder()
             .AddJsonFile($"appsettings.json");
@@ -45,9 +46,11 @@ do
       Console.WriteLine($"{item.CategoryName} - {item.Description}");
     }
     Console.ForegroundColor = ConsoleColor.White;
+    logger.Info("{Count} categories displayed", query.Count());
   }
   else if (choice == "2")
   {
+    logger.Info("Adding new category");
     // Add category
     Category category = new();
     Console.WriteLine("Enter Category Name:");
@@ -86,6 +89,7 @@ do
   }
   else if (choice == "3")
   {
+    logger.Info("Displaying category with products");
     var db = new DataContext();
     var query = db.Categories.OrderBy(p => p.CategoryId);
 
@@ -105,22 +109,28 @@ do
     {
       Console.WriteLine($"\t{p.ProductName}");
     }
+    logger.Info("Displayed {Count} products for category {CategoryName}", category.Products.Count, category.CategoryName);
   }
   else if (choice == "4")
   {
+    logger.Info("Displaying all categories with their products");
     var db = new DataContext();
     var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
+    int totalProducts = 0;
     foreach (var item in query)
     {
       Console.WriteLine($"{item.CategoryName}");
       foreach (Product p in item.Products)
       {
         Console.WriteLine($"\t{p.ProductName}");
+        totalProducts++;
       }
     }
+    logger.Info("Displayed {CategoryCount} categories with {ProductCount} total products", query.Count(), totalProducts);
   }
   else if (choice == "5")
   {
+    logger.Info("Creating new product");
     var db = new DataContext();
 
     Product product = new();
@@ -155,6 +165,7 @@ do
   }
   else if (choice == "6")
   {
+    logger.Info("Editing product");
     var db = new DataContext();
     var products = db.Products.ToList();
 
@@ -166,6 +177,7 @@ do
 
     int selection = int.Parse(Console.ReadLine()!) - 1;
     Product productToEdit = products[selection];
+    logger.Info("Selected product {ProductName} for editing", productToEdit.ProductName);
 
     Console.WriteLine($"\nEditing: {productToEdit.ProductName}");
     Console.WriteLine("Press Enter to keep current value\n");
@@ -183,6 +195,7 @@ do
   }
   else if (choice == "7")
   {
+    logger.Info("Displaying products");
     var db = new DataContext();
 
     Console.WriteLine("Select product display option:");
@@ -190,6 +203,7 @@ do
     Console.WriteLine("2) Active products only");
     Console.WriteLine("3) Discontinued products only");
     string productChoice = Console.ReadLine();
+    logger.Info("Product display option {Choice} selected", productChoice);
 
     IQueryable<Product> query = db.Products;
 
@@ -223,9 +237,11 @@ do
         Console.WriteLine($"{product.ProductName}");
       }
     }
+    logger.Info("Displayed {Count} products", query.Count());
   }
   else if (choice == "8")
   {
+    logger.Info("Displaying specific product details");
     var db = new DataContext();
     var products = db.Products.Include("Category").Include("Supplier").OrderBy(p => p.ProductName).ToList();
 
@@ -237,6 +253,7 @@ do
 
     int selection = int.Parse(Console.ReadLine()!) - 1;
     Product product = products[selection];
+    logger.Info("Displaying details for product: {ProductName}", product.ProductName);
 
     Console.WriteLine("\n--- Product Details ---");
     Console.WriteLine($"Product ID: {product.ProductId}");
@@ -252,6 +269,7 @@ do
   }
   else if (String.IsNullOrEmpty(choice))
   {
+    logger.Info("User chose to exit");
     break;
   }
   Console.WriteLine();
