@@ -23,6 +23,7 @@ do
   Console.WriteLine("8) Display products");
   Console.WriteLine("9) Display specific product");
   Console.WriteLine("10) Delete product");
+  Console.WriteLine("11) Delete category");
   Console.WriteLine("Enter to quit");
   string? choice = Console.ReadLine();
   Console.Clear();
@@ -351,6 +352,58 @@ do
       db.SaveChanges();
       Console.WriteLine($"Product '{productToDelete.ProductName}' deleted successfully.");
       logger.Info("Product deleted: {ProductName}", productToDelete.ProductName);
+    }
+  }
+  else if (choice == "11")
+  {
+    logger.Info("Deleting category");
+    var db = new DataContext();
+    var categories = db.Categories.OrderBy(c => c.CategoryName).ToList();
+
+    Console.WriteLine("Select a Category to Delete:");
+    for (int i = 0; i < categories.Count; i++)
+    {
+      Console.WriteLine($"{i + 1}.) {categories[i].CategoryName}");
+    }
+
+    int selection = int.Parse(Console.ReadLine()!) - 1;
+    Category categoryToDelete = categories[selection];
+
+    // Load related Products to check for orphans
+    var categoryWithProducts = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == categoryToDelete.CategoryId);
+
+    if (categoryWithProducts != null && categoryWithProducts.Products.Any())
+    {
+      Console.WriteLine($"\nWarning: Category '{categoryToDelete.CategoryName}' has {categoryWithProducts.Products.Count} related product(s).");
+      Console.WriteLine("Deleting this category will set all related products' CategoryId to NULL.");
+      Console.Write("Are you sure you want to delete? (yes/no): ");
+      string confirmation = Console.ReadLine()?.ToLower();
+
+      if (confirmation != "yes")
+      {
+        Console.WriteLine("Category deletion cancelled.");
+        logger.Info("Category deletion cancelled by user for: {CategoryName}", categoryToDelete.CategoryName);
+      }
+      else
+      {
+        // Set CategoryId to NULL for orphaned products instead of deleting them
+        foreach (var product in categoryWithProducts.Products)
+        {
+          product.CategoryId = null;
+        }
+        db.Categories.Remove(categoryWithProducts);
+        db.SaveChanges();
+        Console.WriteLine($"Category '{categoryToDelete.CategoryName}' deleted successfully.");
+        Console.WriteLine($"{categoryWithProducts.Products.Count} product(s) now have no category assigned.");
+        logger.Info("Category deleted with {Count} orphaned products: {CategoryName}", categoryWithProducts.Products.Count, categoryToDelete.CategoryName);
+      }
+    }
+    else
+    {
+      db.Categories.Remove(categoryToDelete);
+      db.SaveChanges();
+      Console.WriteLine($"Category '{categoryToDelete.CategoryName}' deleted successfully.");
+      logger.Info("Category deleted: {CategoryName}", categoryToDelete.CategoryName);
     }
   }
   else if (String.IsNullOrEmpty(choice))
