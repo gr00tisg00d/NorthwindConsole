@@ -143,11 +143,12 @@ do
     logger.Info($"CategoryId {id} selected");
     Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id)!;
     Console.WriteLine($"{category.CategoryName} - {category.Description}");
-    foreach (Product p in category.Products)
+    var activeProducts = category.Products.Where(p => !p.Discontinued).ToList();
+    foreach (Product p in activeProducts)
     {
       Console.WriteLine($"\t{p.ProductName}");
     }
-    logger.Info("Displayed {Count} products for category {CategoryName}", category.Products.Count, category.CategoryName);
+    logger.Info("Displayed {Count} active products for category {CategoryName}", activeProducts.Count, category.CategoryName);
   }
   else if (choice == "5")
   {
