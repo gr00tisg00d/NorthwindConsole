@@ -22,6 +22,7 @@ do
   Console.WriteLine("7) Edit product");
   Console.WriteLine("8) Display products");
   Console.WriteLine("9) Display specific product");
+  Console.WriteLine("10) Delete product");
   Console.WriteLine("Enter to quit");
   string? choice = Console.ReadLine();
   Console.Clear();
@@ -305,6 +306,52 @@ do
     Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
     Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
     Console.WriteLine($"Discontinued: {(product.Discontinued ? "Yes" : "No")}");
+  }
+  else if (choice == "10")
+  {
+    logger.Info("Deleting product");
+    var db = new DataContext();
+    var products = db.Products.OrderBy(p => p.ProductName).ToList();
+
+    Console.WriteLine("Select a Product to Delete:");
+    for (int i = 0; i < products.Count; i++)
+    {
+      Console.WriteLine($"{i + 1}.) {products[i].ProductName}");
+    }
+
+    int selection = int.Parse(Console.ReadLine()!) - 1;
+    Product productToDelete = products[selection];
+
+    var productWithOrders = db.Products.Include("OrderDetails").FirstOrDefault(p => p.ProductId == productToDelete.ProductId);
+
+    if (productWithOrders != null && productWithOrders.OrderDetails.Any())
+    {
+      Console.WriteLine($"\nWarning: Product '{productToDelete.ProductName}' has {productWithOrders.OrderDetails.Count} related order(s).");
+      Console.WriteLine("Deleting this product will also remove all related order details.");
+      Console.Write("Are you sure you want to delete? (yes/no): ");
+      string confirmation = Console.ReadLine()?.ToLower();
+
+      if (confirmation != "yes")
+      {
+        Console.WriteLine("Product deletion cancelled.");
+        logger.Info("Product deletion cancelled by user for: {ProductName}", productToDelete.ProductName);
+      }
+      else
+      {
+        db.OrderDetails.RemoveRange(productWithOrders.OrderDetails);
+        db.Products.Remove(productWithOrders);
+        db.SaveChanges();
+        Console.WriteLine($"Product '{productToDelete.ProductName}' and {productWithOrders.OrderDetails.Count} related order detail(s) deleted successfully.");
+        logger.Info("Product deleted with {Count} order details: {ProductName}", productWithOrders.OrderDetails.Count, productToDelete.ProductName);
+      }
+    }
+    else
+    {
+      db.Products.Remove(productToDelete);
+      db.SaveChanges();
+      Console.WriteLine($"Product '{productToDelete.ProductName}' deleted successfully.");
+      logger.Info("Product deleted: {ProductName}", productToDelete.ProductName);
+    }
   }
   else if (String.IsNullOrEmpty(choice))
   {
