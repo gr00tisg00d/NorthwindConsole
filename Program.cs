@@ -15,12 +15,13 @@ do
 {
   Console.WriteLine("1) Display categories");
   Console.WriteLine("2) Add category");
-  Console.WriteLine("3) Display Category and related products");
-  Console.WriteLine("4) Display all Categories and their related products");
-  Console.WriteLine("5) Create product");
-  Console.WriteLine("6) Edit product");
-  Console.WriteLine("7) Display products");
-  Console.WriteLine("8) Display specific product");
+  Console.WriteLine("3) Edit category");
+  Console.WriteLine("4) Display Category and related products");
+  Console.WriteLine("5) Display all Categories and their related products");
+  Console.WriteLine("6) Create product");
+  Console.WriteLine("7) Edit product");
+  Console.WriteLine("8) Display products");
+  Console.WriteLine("9) Display specific product");
   Console.WriteLine("Enter to quit");
   string? choice = Console.ReadLine();
   Console.Clear();
@@ -38,14 +39,11 @@ do
     var db = new DataContext();
     var query = db.Categories.OrderBy(p => p.CategoryName);
 
-    Console.ForegroundColor = ConsoleColor.Green;
     Console.WriteLine($"{query.Count()} records returned");
-    Console.ForegroundColor = ConsoleColor.Magenta;
     foreach (var item in query)
     {
       Console.WriteLine($"{item.CategoryName} - {item.Description}");
     }
-    Console.ForegroundColor = ConsoleColor.White;
     logger.Info("{Count} categories displayed", query.Count());
   }
   else if (choice == "2")
@@ -89,17 +87,57 @@ do
   }
   else if (choice == "3")
   {
+    logger.Info("Editing category");
+    var db = new DataContext();
+    var categories = db.Categories.OrderBy(c => c.CategoryId).ToList();
+
+    Console.WriteLine("Select a Category to Edit:");
+    for (int i = 0; i < categories.Count; i++)
+    {
+      Console.WriteLine($"{i + 1}.) {categories[i].CategoryName}");
+    }
+
+    int selection = int.Parse(Console.ReadLine()!) - 1;
+    Category categoryToEdit = categories[selection];
+    logger.Info("Selected category {CategoryName} for editing", categoryToEdit.CategoryName);
+
+    Console.WriteLine($"\nEditing: {categoryToEdit.CategoryName}");
+    Console.WriteLine("Press Enter to keep current value\n");
+
+    Console.WriteLine($"Category Name [{categoryToEdit.CategoryName}]: ");
+    string input = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(input))
+    {
+      if (db.Categories.Any(c => c.CategoryName == input && c.CategoryId != categoryToEdit.CategoryId))
+      {
+        Console.WriteLine("Error: Category name already exists");
+        logger.Error("Category name {Name} already exists", input);
+      }
+      else
+      {
+        categoryToEdit.CategoryName = input;
+      }
+    }
+
+    Console.WriteLine($"Description [{categoryToEdit.Description}]: ");
+    input = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(input)) categoryToEdit.Description = input;
+
+    db.SaveChanges();
+    logger.Info("Category updated: {CategoryName}", categoryToEdit.CategoryName);
+    Console.WriteLine("Category updated successfully!");
+  }
+  else if (choice == "4")
+  {
     logger.Info("Displaying category with products");
     var db = new DataContext();
     var query = db.Categories.OrderBy(p => p.CategoryId);
 
     Console.WriteLine("Select the category whose products you want to display:");
-    Console.ForegroundColor = ConsoleColor.DarkRed;
     foreach (var item in query)
     {
       Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
     }
-    Console.ForegroundColor = ConsoleColor.White;
     int id = int.Parse(Console.ReadLine()!);
     Console.Clear();
     logger.Info($"CategoryId {id} selected");
@@ -111,7 +149,7 @@ do
     }
     logger.Info("Displayed {Count} products for category {CategoryName}", category.Products.Count, category.CategoryName);
   }
-  else if (choice == "4")
+  else if (choice == "5")
   {
     logger.Info("Displaying all categories with their products");
     var db = new DataContext();
@@ -128,7 +166,7 @@ do
     }
     logger.Info("Displayed {CategoryCount} categories with {ProductCount} total products", query.Count(), totalProducts);
   }
-  else if (choice == "5")
+  else if (choice == "6")
   {
     logger.Info("Creating new product");
     var db = new DataContext();
@@ -163,7 +201,7 @@ do
     db.SaveChanges();
     logger.Info("Product added: {ProductName}", product.ProductName);
   }
-  else if (choice == "6")
+  else if (choice == "7")
   {
     logger.Info("Editing product");
     var db = new DataContext();
@@ -193,7 +231,7 @@ do
     db.SaveChanges();
     logger.Info("Product updated: {ProductName}", productToEdit.ProductName);
   }
-  else if (choice == "7")
+  else if (choice == "8")
   {
     logger.Info("Displaying products");
     var db = new DataContext();
@@ -239,7 +277,7 @@ do
     }
     logger.Info("Displayed {Count} products", query.Count());
   }
-  else if (choice == "8")
+  else if (choice == "9")
   {
     logger.Info("Displaying specific product details");
     var db = new DataContext();
