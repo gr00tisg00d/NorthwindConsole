@@ -151,20 +151,20 @@ do
   }
   else if (choice == "5")
   {
-    logger.Info("Displaying all categories with their products");
+    logger.Info("Displaying all categories with their active products");
     var db = new DataContext();
     var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
     int totalProducts = 0;
     foreach (var item in query)
     {
       Console.WriteLine($"{item.CategoryName}");
-      foreach (Product p in item.Products)
+      foreach (Product p in item.Products.Where(p => !p.Discontinued))
       {
         Console.WriteLine($"\t{p.ProductName}");
         totalProducts++;
       }
     }
-    logger.Info("Displayed {CategoryCount} categories with {ProductCount} total products", query.Count(), totalProducts);
+    logger.Info("Displayed {CategoryCount} categories with {ProductCount} active products", query.Count(), totalProducts);
   }
   else if (choice == "6")
   {
