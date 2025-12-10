@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace NorthwindConsole.Model;
 
@@ -7,6 +8,7 @@ public partial class Product
 {
     public int ProductId { get; set; }
 
+    [Required(ErrorMessage = "Product name is required")]
     public string ProductName { get; set; } = null!;
 
     public int? SupplierId { get; set; }
